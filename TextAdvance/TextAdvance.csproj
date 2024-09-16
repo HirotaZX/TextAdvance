@@ -12,6 +12,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
 		<NoWarn>CS1591</NoWarn>
@@ -22,9 +23,12 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
-	<PropertyGroup>
-		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-	</PropertyGroup>
+    <PropertyGroup>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/XIV on Mac/dalamud/Hooks/dev/</DalamudLibPath>
+        <DalamudLibPath Condition="$(DALAMUD_HOME) != ''">$(DALAMUD_HOME)/</DalamudLibPath>
+    </PropertyGroup>
 
 	<ItemGroup>
 	  <PackageReference Include="DalamudPackager" Version="2.1.12" />
@@ -33,7 +37,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
 	  <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
-	  <ProjectReference Include="..\NightmareUI\NightmareUI\NightmareUI.csproj" />
+	  <ProjectReference Include="..\NightmareUI\NightmareUI\NightmareUI.csproj" Properties="EnableWindowsTargeting=true;UseWindowsForms=true"/>
 	</ItemGroup>
 
 	<ItemGroup>

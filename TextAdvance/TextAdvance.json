@@ -2,7 +2,7 @@
 		"Author": "NightmareXIV",
 		"Name": "TextAdvance",
 		"InternalName": "TextAdvance",
-		"Punchline": "Quest speedrunning assistance tool. Automatically skips subtitle boxes and confirms cutscene skipping",
+		"Punchline": "任务速通辅助工具，自动跳过对话和过场",
 		"Description": "",
 		"ApplicableVersion": "any",
 		"RepoUrl": "https://github.com/NightmareXIV/TextAdvance",
