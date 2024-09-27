@@ -1,5 +1,5 @@
-﻿using Dalamud.Interface.Internal.Notifications;
-using ECommons.Configuration;
+﻿using ECommons.Configuration;
+using ECommons.Funding;
 using NightmareUI;
 
 namespace TextAdvance.Gui;
@@ -24,7 +24,8 @@ internal class ConfigGui : Window, IDisposable
     {
         if (ImGui.BeginChild("Child", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - ImGui.GetFrameHeightWithSpacing())))
         {
-            ImGuiEx.EzTabBar("TextAdvanceTab",
+            PatreonBanner.DrawRight();
+            ImGuiEx.EzTabBar("TextAdvanceTab", PatreonBanner.Text,
                 ("General config", TabConfig.Draw, null, true),
                 ("Target indicators", TabSplatoon.Draw, null, true),
                 ("Auto-enable", TabChars.Draw, null, true),
@@ -34,7 +35,6 @@ internal class ConfigGui : Window, IDisposable
                 );
         }
         ImGui.EndChild();
-        FundingBanner.Draw(ref P.config.DisplayFunding);
     }
 
     public override void PreDraw()
@@ -45,7 +45,7 @@ internal class ConfigGui : Window, IDisposable
     public override void OnClose()
     {
         EzConfig.Save();
-        Svc.PluginInterface.UiBuilder.AddNotification("Configuration saved", "TextAdvance", NotificationType.Success);
+        Notify.Success("Configuration saved");
         base.OnClose();
     }
 

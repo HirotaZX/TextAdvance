@@ -74,10 +74,41 @@ public unsafe class MoveManager
         Log($"Nav to flag {pos.Value:F1}, {iterations} corrections");
     }
 
+    public void MoveTo2DPoint(MoveData data)
+    {
+        var pos = P.NavmeshManager.PointOnFloor(new(data.Position.X, 1024, data.Position.Z), false, 5);
+        var iterations = 0;
+        if (pos == null)
+        {
+            for (var extent = 0; extent < 100; extent += 5)
+            {
+                for (var i = 0; i < 1000; i += 5)
+                {
+                    iterations++;
+                    pos ??= P.NavmeshManager.NearestPoint(new(data.Position.X, Player.Object.Position.Y + i, data.Position.Z), extent, 5);
+                    pos ??= P.NavmeshManager.NearestPoint(new(data.Position.X, Player.Object.Position.Y - i, data.Position.Z), extent, 5);
+                    if (pos != null) break;
+                }
+            }
+        }
+        if (pos == null)
+        {
+            DuoLog.Error($"Failed to move to 2d point");
+            return;
+        }
+        data.Position = pos.Value;
+        EnqueueMoveAndInteract(data);
+        Log($"Nav to 2d point {pos.Value:F1}, {iterations} corrections");
+    }
+
     public void MoveToQuest()
     {
         if (!Player.Available) return;
         //P.EntityOverlay.AutoFrame = CSFramework.Instance()->FrameCounter + 1;
+        if(EzThrottler.Throttle("WarnMTQ", int.MaxValue))
+        {
+            //ChatPrinter.Red($"[TextAdvance] MoveToQuest function may not work correctly until complete Dalamud update");
+        }
         var obj = GetNearestMTQObject();
         if(obj != null)
         {
@@ -99,7 +130,7 @@ public unsafe class MoveManager
         }
     }
 
-    private GameObject GetNearestMTQObject(Vector3? reference = null, float? maxDistance = null)
+    private IGameObject GetNearestMTQObject(Vector3? reference = null, float? maxDistance = null)
     {
         if (!Player.Available) return null;
         if (!(C.Navmesh && P.NavmeshManager.IsReady())) return null;
@@ -117,24 +148,24 @@ public unsafe class MoveManager
         SpecialAdjust(data);
         P.NavmeshManager.Stop();
         P.EntityOverlay.TaskManager.Abort();
-        if (Svc.Condition[ConditionFlag.InFlight])
+        /*if (Svc.Condition[ConditionFlag.InFlight])
         {
             Svc.Toasts.ShowError("[TextAdvance] Flying pathfinding is not supported");
             return;
-        }
-        if (Vector3.Distance(data.Position, Player.Object.Position) > 20f)
+        }*/
+        if (data.Mount ?? Vector3.Distance(data.Position, Player.Object.Position) > 20f)
         {
             P.EntityOverlay.TaskManager.Enqueue(MountIfCan);
         }
-        P.EntityOverlay.TaskManager.Enqueue(FlyIfCan);
+        if(data.Fly != false) P.EntityOverlay.TaskManager.Enqueue(FlyIfCan);
         P.EntityOverlay.TaskManager.Enqueue(() => MoveToPosition(data, 3f));
         P.EntityOverlay.TaskManager.Enqueue(() => WaitUntilArrival(data, 3f), 10 * 60 * 1000);
         P.EntityOverlay.TaskManager.Enqueue(P.NavmeshManager.Stop);
-        if (C.NavmeshAutoInteract)
+        if (C.NavmeshAutoInteract && !data.NoInteract)
         {
             P.EntityOverlay.TaskManager.Enqueue(() =>
             {
-                var obj = data.GetGameObject();
+                var obj = data.GetIGameObject();
                 if(obj != null)
                 {
                     P.EntityOverlay.TaskManager.Insert(() => InteractWithDataID(obj.DataId));
@@ -236,7 +267,7 @@ public unsafe class MoveManager
                 LastPosition = Player.Position;
             }
         }
-        if (P.config.Mount != - 1 && Vector3.Distance(data.Position, Player.Object.Position) > 20f && !Svc.Condition[ConditionFlag.Mounted] && ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) == 0)
+        if (data.Mount != false && P.config.Mount != -1 && Vector3.Distance(data.Position, Player.Object.Position) > 20f && !Svc.Condition[ConditionFlag.Mounted] && ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) == 0)
         {
             EnqueueMoveAndInteract(data);
             return false;
@@ -361,6 +392,23 @@ public unsafe class MoveManager
                 //new(2001717, 212, ObjectKind.EventObj, new(25.5f, 2.1f, -0.0f)), //Exit to the Waking Sands at The Waking Sands
                 data.DataID = 2001717;
                 data.Position = new(25.5f, 2.1f, -0.0f);
+            }
+        }
+        else if(Player.Territory == 351) //rising stones
+        {
+            if (Player.Position.Z < -28.0f && data.Position.Z > -28.0f)
+            {
+                Log("Special adjustment: Exit to the Rising Stones at The Rising Stones");
+                //new(2002880, 351, ObjectKind.EventObj, new(-0.0f, -1.0f, -29.3f)), //Exit to the Rising Stones at The Rising Stones
+                data.DataID = 2002880;
+                data.Position = new(-0.0f, -1.0f, -29.3f);
+            }
+            else if (Player.Position.Z > -28.0f && data.Position.Z < -28.0f)
+            {
+                Log("Special adjustment: Entrance to the Solar at The Rising Stones");
+                //new(2002878, 351, ObjectKind.EventObj, new(-0.0f, -1.0f, -26.8f)), //Entrance to the Solar at The Rising Stones
+                data.DataID = 2002878;
+                data.Position = new(-0.0f, -1.0f, -26.8f);
             }
         }
     }

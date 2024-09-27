@@ -31,6 +31,10 @@ internal class Overlay : Window
         {
             col = EColor.GreenBright;
         }
+        if (P.IsDisableButtonHeld())
+        {
+            col = ImGuiColors.DalamudRed;
+        }
         ImGuiEx.Text(col, "TextAdvance: ");
         ImGui.SameLine(0, 0);
         if (!blocked || Environment.TickCount64 % 2000 > 1000)
@@ -68,6 +72,10 @@ internal class Overlay : Window
             ImGuiEx.Text(ImGuiColors.DalamudGrey, " | ");
             ImGui.SameLine(0, 0);
             ImGuiEx.Text(P.config.GetEnableAutoInteract() ? col : ImGuiColors.DalamudGrey2, "IN");
+            ImGui.SameLine(0, 0);
+            ImGuiEx.Text(ImGuiColors.DalamudGrey, " | ");
+            ImGui.SameLine(0, 0);
+            ImGuiEx.Text(P.config.GetEnableAutoSnipe() ? col : ImGuiColors.DalamudGrey2, "SN");
         }
         else
         {

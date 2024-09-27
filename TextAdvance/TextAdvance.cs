@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Interface.Internal.Notifications;
 using ECommons;
 using ECommons.Automation;
 using ECommons.Automation.LegacyTaskManager;
@@ -13,6 +12,7 @@ using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
+using System.Security.Principal;
 using TextAdvance.Executors;
 using TextAdvance.Gui;
 using TextAdvance.Navmesh;
@@ -58,7 +58,7 @@ public unsafe class TextAdvance : IDalamudPlugin
         P = null;
     }
 
-    public TextAdvance(DalamudPluginInterface pluginInterface)
+    public TextAdvance(IDalamudPluginInterface pluginInterface)
     {
         P = this;
         ECommonsMain.Init(pluginInterface, this, Module.SplatoonAPI);
@@ -113,6 +113,7 @@ public unsafe class TextAdvance : IDalamudPlugin
             EntityOverlay = new();
             ProgressOverlay = new();
             NavmeshManager = new();
+            ExecAutoSnipe.Init(); // must init after memory
             SingletonServiceManager.Initialize(typeof(ServiceManager));
             EzIPC.OnSafeInvocationException += this.EzIPC_OnSafeInvocationException;
         });
@@ -215,14 +216,14 @@ public unsafe class TextAdvance : IDalamudPlugin
 
     internal bool IsEnabled(bool pure = false)
     {
-        return (Enabled || IsTerritoryEnabled()) && (!Locked || pure);
+        return (Enabled || S.IPCProvider.IsInExternalControl() || IsTerritoryEnabled() || IsEnableButtonHeld()) && (!Locked || pure);
     }
 
     internal bool IsTerritoryEnabled()
     {
         if (S.IPCProvider.IsInExternalControl())
         {
-            return S.IPCProvider.Config.IsEnabled();
+            return false;
         }
         return P.config.TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var cfg) && cfg.IsEnabled();
     }
@@ -233,6 +234,7 @@ public unsafe class TextAdvance : IDalamudPlugin
         {
             ExecSkipTalk.IsEnabled = false;
             ExecPickReward.IsEnabled = false;
+            ExecAutoSnipe.IsEnabled = false;
             if (loggedIn && Svc.ClientState.LocalPlayer != null)
             {
                 loggedIn = false;
@@ -241,8 +243,7 @@ public unsafe class TextAdvance : IDalamudPlugin
                     Enabled = true;
                     if (!P.config.NotifyDisableOnLogin)
                     {
-                        Svc.PluginInterface.UiBuilder.AddNotification("Auto text advance has been automatically enabled on this character",
-                            "TextAdvance", NotificationType.Info, 10000);
+                        Notify.Success("Auto text advance has been automatically enabled on this character");
                     }
                 }
             }
@@ -264,7 +265,7 @@ public unsafe class TextAdvance : IDalamudPlugin
                         }
                         if (config.GetEnableAutoInteract()) ExecAutoInteract.Tick();
                     }
-                    if ((IsEnabled() || (IsEnableButtonHeld() && Native.ApplicationIsActivated())) &&
+                    if (IsEnabled() &&
                         (Svc.Condition[ConditionFlag.OccupiedInQuestEvent] ||
                         Svc.Condition[ConditionFlag.Occupied33] ||
                         Svc.Condition[ConditionFlag.OccupiedInEvent] ||
@@ -284,6 +285,7 @@ public unsafe class TextAdvance : IDalamudPlugin
                         if (config.GetEnableRequestHandin()) ExecRequestComplete.Tick();
                         if (config.GetEnableRequestFill()) ExecRequestFill.Tick();
                         if (config.GetEnableRewardPick()) ExecPickReward.IsEnabled = true;
+                        if (config.GetEnableAutoSnipe()) ExecAutoSnipe.IsEnabled = true;
                     }
                 }
             }
@@ -302,17 +304,17 @@ public unsafe class TextAdvance : IDalamudPlugin
 
     internal bool IsDisableButtonHeld()
     {
-        if (config.TempDisableButton == Button.ALT && ImGui.GetIO().KeyAlt) return true;
-        if (config.TempDisableButton == Button.CTRL && ImGui.GetIO().KeyCtrl) return true;
-        if (config.TempDisableButton == Button.SHIFT && ImGui.GetIO().KeyShift) return true;
+        if (config.TempDisableButton == Button.ALT && ImGui.GetIO().KeyAlt) return !CSFramework.Instance()->WindowInactive;
+        if (config.TempDisableButton == Button.CTRL && ImGui.GetIO().KeyCtrl) return !CSFramework.Instance()->WindowInactive;
+        if (config.TempDisableButton == Button.SHIFT && ImGui.GetIO().KeyShift) return !CSFramework.Instance()->WindowInactive;
         return false;
     }
 
     bool IsEnableButtonHeld()
     {
-        if (config.TempEnableButton == Button.ALT && ImGui.GetIO().KeyAlt) return true;
-        if (config.TempEnableButton == Button.CTRL && ImGui.GetIO().KeyCtrl) return true;
-        if (config.TempEnableButton == Button.SHIFT && ImGui.GetIO().KeyShift) return true;
+        if (config.TempEnableButton == Button.ALT && ImGui.GetIO().KeyAlt) return !CSFramework.Instance()->WindowInactive;
+        if (config.TempEnableButton == Button.CTRL && ImGui.GetIO().KeyCtrl) return !CSFramework.Instance()->WindowInactive;
+        if (config.TempEnableButton == Button.SHIFT && ImGui.GetIO().KeyShift) return !CSFramework.Instance()->WindowInactive;
         return false;
     }
 }

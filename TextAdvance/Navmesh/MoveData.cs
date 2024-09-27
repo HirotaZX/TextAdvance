@@ -13,6 +13,8 @@ public class MoveData
     public Vector3 Position;
     public uint DataID;
     public bool NoInteract;
+    public bool? Mount = null;
+    public bool? Fly = null;
 
     public MoveData(Vector3 destination, uint dataID, bool noInteract)
     {
@@ -21,7 +23,7 @@ public class MoveData
         this.NoInteract = noInteract;
     }
 
-    public GameObject GetGameObject(float maxDistance = 20f)
+    public IGameObject GetIGameObject(float maxDistance = 20f)
     {
         if(!Player.Available) return null;
         if (DataID == 0)

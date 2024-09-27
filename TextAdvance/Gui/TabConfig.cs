@@ -19,6 +19,16 @@ internal static class TabConfig
             }
         }
 
+        if (S.IPCProvider.IsInExternalControl())
+        {
+            ImGuiEx.TextWrapped(EColor.RedBright, $"TextAdvance is externally controlled by {S.IPCProvider.Requester}. All your settings are being ignored.");
+            if (ImGui.SmallButton("Cancel external control"))
+            {
+                S.IPCProvider.Requester = null;
+                S.IPCProvider.ExternalConfig = null;
+            }
+        }
+
         new NuiBuilder()
         .Section("Plugin operation")
         .Widget(() =>
@@ -67,6 +77,8 @@ internal static class TabConfig
             ImGuiComponents.HelpMarker("Automatically confirms cutscene skips upon pressing ESC.");
             ImGui.Checkbox("Automatic interaction with quest-related object (IN)", ref P.config.MainConfig.EnableAutoInteract);
             ImGuiComponents.HelpMarker("Automatically interacts with nearby quest-related NPCs and objects.");
+            ImGui.Checkbox("Automatic completion of \"snipe\" quest sequences (SN)", ref P.config.MainConfig.EnableAutoSnipe);
+            ImGuiComponents.HelpMarker("Automatically completes snipe quest sequences when the relevant sequence loads. This will not do the quest, but rather end it immediately as if it was completed.");
         })
 
         .Section("Overlay")
@@ -122,6 +134,7 @@ internal static class TabConfig
                 ImGui.EndCombo();
             }
             ImGui.Checkbox($"Print navigation status into chat", ref P.config.NavStatusChat);
+            ImGui.Checkbox("(very experimental) Allow flight", ref P.config.EnableFlight);
         })
 
         .Section("Miscellaneous")

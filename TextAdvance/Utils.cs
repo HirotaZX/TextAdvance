@@ -100,7 +100,7 @@ public unsafe static class Utils
         });
     }
 
-    public static bool IsMTQ(this GameObject x)
+    public static bool IsMTQ(this IGameObject x)
     {
         var id = x.Struct()->NamePlateIconId;
         if (Markers.MSQ.Contains(id) || Markers.ImportantSideProgress.Contains(id) || Markers.SideProgress.Contains(id))
@@ -134,9 +134,9 @@ public unsafe static class Utils
     {   
         var ret = new List<(int, int)>();
         var manager = QuestManager.Instance();
-        for (int i = 0; i < manager->NormalQuestsSpan.Length; i++)
+        for (int i = 0; i < manager->NormalQuests.Length; i++)
         {
-            var q = manager->NormalQuestsSpan[i];
+            var q = manager->NormalQuests[i];
             ret.Add((q.QuestId, q.Sequence));
         }
         return ret;

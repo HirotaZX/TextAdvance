@@ -31,11 +31,11 @@ public class Config : IEzConfig
     public int Mount = 0;
     public bool NavStatusChat = false;
     public bool DisplayFunding = true;
-    internal bool EnableFlight = false;
+    public bool EnableFlight = false;
 
     public bool GetEnableQuestAccept()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableQuestAccept;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableQuestAccept;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableQuestAccept;
@@ -44,7 +44,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableQuestComplete()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableQuestComplete;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableQuestComplete;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableQuestComplete;
@@ -53,7 +53,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableRequestHandin()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableRequestHandin;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableRequestHandin;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableRequestHandin;
@@ -62,7 +62,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableCutsceneEsc()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableCutsceneEsc;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableCutsceneEsc;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableCutsceneEsc;
@@ -71,7 +71,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableCutsceneSkipConfirm()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableCutsceneSkipConfirm;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableCutsceneSkipConfirm;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableCutsceneSkipConfirm;
@@ -80,7 +80,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableTalkSkip()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableTalkSkip;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableTalkSkip;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableTalkSkip;
@@ -89,7 +89,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableRequestFill()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableRequestFill;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableRequestFill;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableRequestFill;
@@ -148,7 +148,7 @@ public class Config : IEzConfig
     }
     public bool GetEnableRewardPick()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableRewardPick;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableRewardPick;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableRewardPick;
@@ -157,12 +157,21 @@ public class Config : IEzConfig
     }
     public bool GetEnableAutoInteract()
     {
-        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.Config.EnableAutoInteract;
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableAutoInteract;
         if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
         {
             return val.EnableAutoInteract;
         }
         return MainConfig.EnableAutoInteract;
+    }
+    public bool GetEnableAutoSnipe()
+    {
+        if (S.IPCProvider.IsInExternalControl()) return S.IPCProvider.ExternalConfig.Merge(MainConfig).EnableAutoSnipe;
+        if (!(GlobalOverridesLocal && P.Enabled) && TerritoryConditions.TryGetValue(Svc.ClientState.TerritoryType, out var val))
+        {
+            return val.EnableAutoSnipe;
+        }
+        return MainConfig.EnableAutoSnipe;
     }
 }
 
@@ -183,6 +192,7 @@ public class TerritoryConfig
     public bool EnableTalkSkip = true;
     public bool EnableRequestFill = true;
     public bool EnableAutoInteract = false;
+    public bool EnableAutoSnipe = false;
 
     public bool QTIQuestEnabled = true;
     public Vector4 QTIQuestColor = EColor.PurpleBright;
@@ -191,8 +201,51 @@ public class TerritoryConfig
     public bool QTIQuestHideWhenTargeted = false;
     public bool QTIAlwaysEnabled = false;
 
+    public TerritoryConfig Clone()
+    {
+        var ret = new TerritoryConfig();
+        foreach (var x in ret.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        {
+            x.SetValue(ret, x.GetValue(this));
+        }
+        return ret;
+    }
+
     public bool IsEnabled()
     {
-        return EnableQuestAccept || EnableQuestComplete || EnableRequestHandin || EnableCutsceneEsc || EnableCutsceneSkipConfirm || EnableTalkSkip || EnableRequestFill || EnableRewardPick || EnableAutoInteract;
+        return EnableQuestAccept || EnableQuestComplete || EnableRequestHandin || EnableCutsceneEsc || EnableCutsceneSkipConfirm || EnableTalkSkip || EnableRequestFill || EnableRewardPick || EnableAutoInteract || EnableAutoSnipe;
+    }
+}
+
+[Serializable]
+public class ExternalTerritoryConfig
+{
+    public bool? EnableQuestAccept = null;
+    public bool? EnableQuestComplete = null;
+    public bool? EnableRewardPick = null;
+    public bool? EnableRequestHandin = null;
+    public bool? EnableCutsceneEsc = null;
+    public bool? EnableCutsceneSkipConfirm = null;
+    public bool? EnableTalkSkip = null;
+    public bool? EnableRequestFill = null;
+    public bool? EnableAutoInteract = null;
+    public bool? EnableAutoSnipe = null;
+
+    public TerritoryConfig Merge(TerritoryConfig other)
+    {
+        //([a-zA-Z]+) = null;
+        //\1 ?? other.\1;
+        var ret = other.Clone();
+        ret.EnableQuestAccept = this.EnableQuestAccept ?? other.EnableQuestAccept;
+        ret.EnableQuestComplete = this.EnableQuestComplete ?? other.EnableQuestComplete;
+        ret.EnableRewardPick = this.EnableRewardPick ?? other.EnableRewardPick;
+        ret.EnableRequestHandin = this.EnableRequestHandin ?? other.EnableRequestHandin;
+        ret.EnableCutsceneEsc = this.EnableCutsceneEsc ?? other.EnableCutsceneEsc;
+        ret.EnableCutsceneSkipConfirm = this.EnableCutsceneSkipConfirm ?? other.EnableCutsceneSkipConfirm;
+        ret.EnableTalkSkip = this.EnableTalkSkip ?? other.EnableTalkSkip;
+        ret.EnableRequestFill = this.EnableRequestFill ?? other.EnableRequestFill;
+        ret.EnableAutoInteract = this.EnableAutoInteract ?? other.EnableAutoInteract;
+        ret.EnableAutoSnipe = this.EnableAutoSnipe ?? other.EnableAutoSnipe;
+        return ret;
     }
 }
